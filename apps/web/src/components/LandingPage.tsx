@@ -34,12 +34,12 @@ export function LandingPage({ onCreate }: { onCreate: () => void }) {
         className="mx-auto mb-7 w-full max-w-xl rounded-lg border border-stone-200/40 dark:border-[var(--color-edge)]"
       />
 
-      <p className="mx-auto max-w-2xl font-display text-base leading-relaxed opacity-80">
+      <p className="mx-auto max-w-2xl text-balance font-display text-base leading-relaxed opacity-80">
         A free, modern remake of the BBS classics{" "}
         <span className="text-[var(--color-accent)]">Barren Realms Elite</span> &amp;{" "}
         <span className="text-[var(--color-accent)]">Solar Realms Elite</span>. Rule an empire on a
-        shared planet — balance a Credits / Food / Fuel economy, research up the tech tree, and
-        outlast your rivals.
+        living, shared planet: balance a Credits / Food / Fuel economy, raise structures and armies,
+        and climb the tech tree from Planet to Galaxy — outlasting every&nbsp;rival.
       </p>
 
       <button
