@@ -33,7 +33,7 @@ export function Realm({
   return (
     // Objective first (full width), then Policy 50/50, then Territory + Forces.
     <section className="wr-boot grid gap-px overflow-hidden rounded-lg border border-stone-200 bg-stone-200 dark:border-[var(--color-edge)] dark:bg-[var(--color-edge)] lg:grid-cols-2">
-      <Objective game={game} victory={victory} />
+      <Objective game={game} playerId={playerId} victory={victory} />
       <Policy e={e} config={game.config} dispatch={dispatch} />
       <Territory e={e} game={game} playerId={playerId} />
       <Forces e={e} />
@@ -42,12 +42,29 @@ export function Realm({
 }
 
 /* ── Objective ──────────────────────────────────────────────────────── */
-function Objective({ game, victory }: { game: GameState; victory: VictoryStatus }) {
+function Objective({
+  game,
+  playerId,
+  victory,
+}: {
+  game: GameState;
+  playerId: string;
+  victory: VictoryStatus;
+}) {
   const cfg = game.config.victory;
+  // Player's tier of play, derived from tech progress (Planet → System → Galaxy).
+  const tech = game.empires[playerId]?.tech ?? [];
+  const tier = tech.includes("jumpGateTheory")
+    ? "Galaxy Tier"
+    : tech.includes("interplanetaryDrive")
+      ? "System Tier"
+      : "Planet Tier";
   return (
     <div className="bg-white/70 p-4 dark:bg-[var(--color-panel)] lg:col-span-2">
       <Header icon={Target} label="Objective">
-        <span className="capitalize opacity-50">{cfg.length} game</span>
+        <span className="capitalize opacity-50">
+          {tier} · {cfg.length} game
+        </span>
         <span className="opacity-50">
           {" "}
           · turn {victory.gameTurn}/{victory.turnDeadline}

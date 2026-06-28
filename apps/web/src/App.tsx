@@ -74,25 +74,18 @@ export function App() {
 
   const leaderName = game && victory ? game.empires[victory.leaderId]?.name ?? "—" : "—";
   const playerWon = !!victory?.over && victory.winnerId === playerId;
-  // Header subtitle reflects the player's tier of play (drives off tech progress),
-  // not the old dev-roadmap "Phase" label.
-  const playerTech = game?.empires[playerId]?.tech ?? [];
-  const tierLabel = playerTech.includes("jumpGateTheory")
-    ? "Galaxy Tier"
-    : playerTech.includes("interplanetaryDrive")
-      ? "System Tier"
-      : "Planet Tier";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-clip">
       {/* ── Top bar ───────────────────────────────────────────────── */}
       <header className="sticky top-0 z-10 border-b border-stone-300/70 bg-stone-50/80 backdrop-blur-md dark:border-[var(--color-edge)] dark:bg-[var(--color-void)]/80">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-3">
-          <Globe className="h-6 w-6 text-[var(--color-accent)]" strokeWidth={2} />
-          <div className="flex-1">
-            <h1 className="font-display text-lg font-bold tracking-tight">
-              WASTED REALMS
-            </h1>
+        <div className="mx-auto flex max-w-6xl items-center gap-1.5 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <Globe className="h-6 w-6 shrink-0 text-[var(--color-accent)]" strokeWidth={2} />
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate font-display text-base font-bold tracking-tight sm:text-lg">
+                WASTED REALMS
+              </h1>
             <p className="flex h-4 items-center gap-1 font-display text-[11px] uppercase tracking-[0.2em] opacity-50">
               {game ? (
                 <>
@@ -125,15 +118,16 @@ export function App() {
                       <Pencil className="h-2.5 w-2.5 opacity-60" />
                     </button>
                   )}
-                  <span>· {tierLabel}</span>
                 </>
               ) : (
                 <span className="normal-case tracking-normal">Free 4X empire remake</span>
               )}
             </p>
+            </div>
           </div>
 
-          <nav className="mr-2 flex gap-1">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <nav className="flex gap-1">
             <NavBtn on={view === "command"} onClick={() => setView("command")} Icon={Gamepad2}>
               Command
             </NavBtn>
@@ -174,8 +168,9 @@ export function App() {
             className="inline-flex items-center gap-2 rounded-md border border-stone-300 px-3 py-1.5 font-display text-xs uppercase tracking-wider transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] dark:border-[var(--color-edge)]"
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            {theme === "dark" ? "Day Ops" : "Night Ops"}
+            <span className="hidden sm:inline">{theme === "dark" ? "Day Ops" : "Night Ops"}</span>
           </button>
+          </div>
         </div>
       </header>
 
@@ -322,14 +317,14 @@ function NavBtn({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 font-display text-sm transition-colors ${
+      className={`inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 font-display text-sm transition-colors sm:px-3 ${
         on
           ? "bg-[var(--color-accent)] text-black"
           : "border border-stone-300 hover:border-[var(--color-accent)] dark:border-[var(--color-edge)]"
       }`}
     >
-      <Icon className="h-4 w-4" />
-      {children}
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="hidden sm:inline">{children}</span>
     </button>
   );
 }

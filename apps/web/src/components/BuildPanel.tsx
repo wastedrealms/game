@@ -220,7 +220,7 @@ function Row({
   onBuild: () => void;
 }) {
   return (
-    <li className="relative flex items-center gap-3 px-4 py-2.5">
+    <li className="relative flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2.5 sm:flex-nowrap">
       {accent && (
         <span
           aria-hidden
@@ -229,35 +229,42 @@ function Row({
           }`}
         />
       )}
-      {swatch && (
-        <span
-          className="h-4 w-4 shrink-0 rounded-sm"
-          style={{ background: swatch }}
-          title="Your color for this region type"
-        />
-      )}
-      {Icon && <Icon className="h-4 w-4 shrink-0 opacity-70" />}
-      <div className="min-w-0 flex-1">
-        <div className="font-display text-sm font-medium">
-          {title}
-          {owned ? <span className="ml-1.5 font-normal opacity-50">×{owned}</span> : null}
-        </div>
-        {subtitle && (
-          <div className="font-display text-[11px] uppercase tracking-wide opacity-50">
-            {subtitle}
-          </div>
+      {/* Name + description: takes the whole first row on mobile so long requirement
+          text wraps wide instead of into a narrow sliver. */}
+      <div className="flex min-w-0 basis-full items-center gap-3 sm:basis-0 sm:flex-1">
+        {swatch && (
+          <span
+            className="h-4 w-4 shrink-0 rounded-sm"
+            style={{ background: swatch }}
+            title="Your color for this region type"
+          />
         )}
+        {Icon && <Icon className="h-4 w-4 shrink-0 opacity-70" />}
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-sm font-medium">
+            {title}
+            {owned ? <span className="ml-1.5 font-normal opacity-50">×{owned}</span> : null}
+          </div>
+          {subtitle && (
+            <div className="font-display text-[11px] uppercase tracking-wide opacity-50">
+              {subtitle}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="shrink-0">{cost}</div>
-      <button
-        onClick={onBuild}
-        disabled={disabled}
-        title={disabled ? reason : undefined}
-        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-stone-300 px-2.5 py-1.5 font-display text-xs transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-stone-300 disabled:hover:text-inherit dark:border-[var(--color-edge)]"
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-        Build
-      </button>
+      {/* Cost + action: wraps to its own row on mobile; costs may wrap freely. */}
+      <div className="flex flex-1 items-center justify-between gap-3 sm:flex-none sm:justify-end">
+        <div className="min-w-0">{cost}</div>
+        <button
+          onClick={onBuild}
+          disabled={disabled}
+          title={disabled ? reason : undefined}
+          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-stone-300 px-2.5 py-1.5 font-display text-xs transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-stone-300 disabled:hover:text-inherit dark:border-[var(--color-edge)]"
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+          Build
+        </button>
+      </div>
     </li>
   );
 }
