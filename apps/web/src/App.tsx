@@ -16,6 +16,8 @@ import {
   Pencil,
   Info,
   Power,
+  Menu as MenuIcon,
+  X,
 } from "lucide-react";
 import { useTheme } from "./useTheme";
 import { useGame } from "./game/useGame";
@@ -72,6 +74,7 @@ export function App() {
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   const [dismissedWin, setDismissedWin] = useState(false);
   const [editingName, setEditingName] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const leaderName = game && victory ? game.empires[victory.leaderId]?.name ?? "—" : "—";
   const playerWon = !!victory?.over && victory.winnerId === playerId;
@@ -89,7 +92,7 @@ export function App() {
               <h1 className="hidden truncate font-display text-base font-bold tracking-tight sm:block sm:text-lg">
                 WASTED REALMS
               </h1>
-            <p className="flex h-4 items-center gap-1 font-display text-[11px] uppercase tracking-[0.2em] opacity-100 sm:opacity-50">
+            <p className="flex h-5 items-center gap-1 font-display text-sm uppercase tracking-[0.15em] opacity-100 sm:h-4 sm:text-[11px] sm:tracking-[0.2em] sm:opacity-50">
               {game ? (
                 <button
                   onClick={() => setEditingName(true)}
@@ -106,7 +109,8 @@ export function App() {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          {/* Desktop action cluster */}
+          <div className="hidden shrink-0 items-center gap-1 sm:flex sm:gap-2">
           <nav className="flex gap-1">
             <NavBtn on={view === "command"} onClick={() => setView("command")} Icon={Gamepad2}>
               Command
@@ -150,6 +154,86 @@ export function App() {
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             <span className="hidden sm:inline">{theme === "dark" ? "Day Ops" : "Night Ops"}</span>
           </button>
+          </div>
+
+          {/* Mobile hamburger menu */}
+          <div className="relative shrink-0 sm:hidden">
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Menu"
+              aria-expanded={menuOpen}
+              className="inline-flex items-center rounded-md border border-stone-300 p-1.5 transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] dark:border-[var(--color-edge)]"
+            >
+              {menuOpen ? <X className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-full z-50 mt-1.5 w-48 overflow-hidden rounded-lg border border-stone-300 bg-stone-50 py-1 shadow-xl dark:border-[var(--color-edge)] dark:bg-[var(--color-panel)]">
+                  <MenuItem
+                    Icon={Gamepad2}
+                    on={view === "command"}
+                    onClick={() => {
+                      setView("command");
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Command
+                  </MenuItem>
+                  <MenuItem
+                    Icon={BookOpen}
+                    on={view === "codex"}
+                    onClick={() => {
+                      setView("codex");
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Codex
+                  </MenuItem>
+                  <div className="my-1 border-t border-stone-200 dark:border-[var(--color-edge)]" />
+                  <MenuItem
+                    Icon={theme === "dark" ? Sun : Moon}
+                    onClick={() => {
+                      toggle();
+                      setMenuOpen(false);
+                    }}
+                  >
+                    {theme === "dark" ? "Day Ops" : "Night Ops"}
+                  </MenuItem>
+                  <MenuItem
+                    Icon={Info}
+                    onClick={() => {
+                      setAboutOpen(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    About &amp; support
+                  </MenuItem>
+                  <div className="my-1 border-t border-stone-200 dark:border-[var(--color-edge)]" />
+                  <MenuItem
+                    Icon={RotateCcw}
+                    onClick={() => {
+                      setSetupOpen(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    New game
+                  </MenuItem>
+                  {game && (
+                    <MenuItem
+                      Icon={Power}
+                      danger
+                      onClick={() => {
+                        setEndConfirmOpen(true);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      End game
+                    </MenuItem>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -313,6 +397,37 @@ function NavBtn({
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="hidden sm:inline">{children}</span>
+    </button>
+  );
+}
+
+/** A single row in the mobile hamburger dropdown. */
+function MenuItem({
+  Icon,
+  on,
+  danger,
+  onClick,
+  children,
+}: {
+  Icon: typeof Globe;
+  on?: boolean;
+  danger?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-2.5 px-3 py-2 text-left font-display text-sm transition-colors ${
+        on
+          ? "text-[var(--color-accent)]"
+          : danger
+            ? "hover:bg-red-500/10 hover:text-red-500"
+            : "hover:bg-stone-100 dark:hover:bg-white/[0.04]"
+      }`}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {children}
     </button>
   );
 }
