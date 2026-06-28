@@ -41,7 +41,7 @@ export function BuildPanel({
     <section className="wr-boot rounded-lg border border-stone-200 bg-white/60 dark:border-[var(--color-edge)] dark:bg-[var(--color-panel)]">
       <div className="flex gap-1 border-b border-stone-200 p-2 dark:border-[var(--color-edge)]">
         <SubTab on={sub === "regions"} onClick={() => setSub("regions")} Icon={Map}>
-          Buy Land
+          Regions
         </SubTab>
         <SubTab
           on={sub === "structures"}
@@ -51,7 +51,7 @@ export function BuildPanel({
           Structures
         </SubTab>
         <SubTab on={sub === "units"} onClick={() => setSub("units")} Icon={Swords}>
-          Recruit
+          Troops
         </SubTab>
       </div>
 

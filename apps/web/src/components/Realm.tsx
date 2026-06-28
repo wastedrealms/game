@@ -14,6 +14,7 @@ import {
   type VictoryStatus,
   type RegionKey,
 } from "@wasted-realms/engine";
+import type { CSSProperties } from "react";
 import { Globe2, Swords, Landmark, Shield, Coins, Gauge, Target } from "lucide-react";
 import { REGION_COLOR } from "../ui/regionColors";
 
@@ -266,7 +267,8 @@ function Policy({
           value={e.taxRate}
           onChange={(ev) => dispatch({ kind: "SET_TAX", rate: Number(ev.target.value) })}
           aria-label="Tax rate"
-          className="mt-1.5 w-full accent-[var(--color-accent)]"
+          style={{ "--pct": `${e.taxRate}%` } as CSSProperties}
+          className="wr-range mt-1.5 w-full"
         />
         <p className="mt-1 font-display text-[11px] opacity-50">
           Higher tax funds you now but erodes support, which scales all output.
