@@ -1,0 +1,20 @@
+{
+  "name": "wasted-realms",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A modern web reimagining of the BBS door games Barren Realms Elite & Solar Realms Elite.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @wasted-realms/web",
+    "build": "npm run build --workspace @wasted-realms/engine && npm run build --workspace @wasted-realms/web",
+    "test": "npm run test --workspace @wasted-realms/engine",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "deploy:prod": "bash scripts/deploy-prod.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,31 @@
+name: Bug report
+description: Something is broken or behaving oddly
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See …
+  - type: input
+    id: env
+    attributes:
+      label: Browser / device (optional)
+      description: e.g. Chrome 126 on Windows, Safari on iPhone
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors (optional)
+      description: Anything red in the browser dev-tools console.
+      render: text

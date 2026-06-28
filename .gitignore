@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+.npm/
+
+# builds
+dist/
+build/
+*.tsbuildinfo
+
+# vite
+.vite/
+
+# test coverage
+coverage/
+
+# logs
+*.log
+npm-debug.log*
+
+# env / local (keep .env.example checked in)
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+*.Zone.Identifier
+
+# editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# project-private (kept out of the public repo)
+# original 2002 BRE/SRE source specs (IP) — provenance only
+/info/
+# design / research / planning IP (GDD, architecture, roadmap, balance)
+/docs/
+# local dev MCP config (chrome-devtools/playwright)
+/.mcp.json
+# agent/project instructions
+/CLAUDE.md

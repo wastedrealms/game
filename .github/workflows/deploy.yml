@@ -1,0 +1,83 @@
+# Build + deploy the Wasted Realms web app (static Vite SPA) to S3 + CloudFront.
+#
+# The `deployment` input selects a GitHub Environment that holds that target's config,
+# so "production first" — and adding `staging` (or another game's deploy) later is just
+# another Environment with its own vars/secrets. Modeled on the totem-devops app
+# build/deploy workflows, collapsed into one (single repo, static frontend only).
+#
+# Per-Environment configuration to create in GitHub (Settings → Environments):
+#   Variables (vars):
+#     AWS_REGION                  e.g. us-east-1
+#     CLOUDFRONT_DISTRIBUTION_ID  e.g. E123ABC...     (the game.wastedrealms.com distribution)
+#   Secrets:
+#     S3_BUCKET                   wr-game-production-<acct>  (contains the AWS account id →
+#                                 kept as a SECRET so it's masked in public Actions logs)
+#     AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY   (the prod account's deploy creds)
+#
+# Note: S3 bucket + CloudFront dist + ACM cert + the Route53 `game.wastedrealms.com`
+# alias do not exist yet — see the infra step (CloudFormation) to be drafted next.
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment:
+        description: Deployment target (GitHub Environment)
+        type: environment
+        required: true
+        default: production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.deployment }}
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.deployment }}
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test (engine)
+        run: npm test
+
+      - name: Build (typecheck + engine + web → apps/web/dist)
+        run: npm run build
+
+      # Hashed assets can cache forever; index.html must revalidate so new builds show.
+      - name: Sync hashed assets to S3 (immutable, long cache)
+        run: |
+          aws s3 sync apps/web/dist "s3://${{ secrets.S3_BUCKET }}" \
+            --delete \
+            --exclude "index.html" \
+            --cache-control "public, max-age=31536000, immutable"
+
+      - name: Sync index.html to S3 (no cache)
+        run: |
+          aws s3 cp apps/web/dist/index.html "s3://${{ secrets.S3_BUCKET }}/index.html" \
+            --cache-control "no-cache"
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"
