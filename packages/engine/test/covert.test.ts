@@ -26,8 +26,6 @@ function empire(over: Partial<EmpireState>): EmpireState {
     regions: [],
     militaryStructures: {},
     units: {},
-    turns: 8,
-    lastAccrualAt: 0,
     protectionTurnsLeft: 0,
     turnsPlayed: 0,
     regionSeq: 0,
@@ -118,16 +116,15 @@ describe("COVERT_OP action", () => {
     return game;
   }
 
-  it("spends a turn and does not mutate input state", () => {
+  it("does not mutate input state", () => {
     const game = g();
     const goldBefore = game.empires.p1.resources.gold;
-    const { state } = apply(
+    apply(
       game,
       "p1",
       { kind: "COVERT_OP", targetEmpireId: "n1", operation: "spy", agents: 100 },
       ctx,
     );
-    expect(state.empires.p1.turns).toBe(game.config.turnsPerDay - 1);
     expect(game.empires.p1.resources.gold).toBe(goldBefore); // input untouched
   });
 

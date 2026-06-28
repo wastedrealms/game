@@ -108,8 +108,8 @@ export interface UnitType {
 
 /** Per-game tunable constants (balance options). */
 export interface GameConfig {
+  /** Turns that make up one "day" — the cadence on which land/attacks reset. */
   turnsPerDay: number;
-  dayMinutes: number;
   protectionTurns: number;
   /** Legacy flat daily land faucet (kept for MP/back-compat; see landPerEmpirePerDay). */
   landCreatedPerDay: number;

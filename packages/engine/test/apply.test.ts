@@ -21,10 +21,10 @@ function newGame(): GameState {
 }
 
 describe("createGame", () => {
-  it("creates the requested empires with starting turns", () => {
+  it("creates the requested empires ready to play", () => {
     const g = newGame();
     expect(g.order).toEqual(["p1", "n1"]);
-    expect(g.empires.p1.turns).toBe(g.config.turnsPerDay);
+    expect(g.empires.p1.turnsPlayed).toBe(0);
     expect(g.empires.p1.resources.gold).toBe(2000);
   });
 });
@@ -142,18 +142,17 @@ describe("shared land pool", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("refills the pool when a new day elapses", () => {
-    const g = { ...richGame(), landPool: 0 };
-    const dayMs = g.config.dayMinutes * 60_000;
-    const t = frontierTiles(g.planet, "p1")[0];
-    const next = apply(
-      g,
-      "p1",
-      { kind: "BUY_REGION", regionType: "desert", qty: 1, tile: t },
-      { now: dayMs, seed: 1 },
-    );
-    expect(next.result.ok).toBe(true);
-    expect(next.state.landPool).toBe(g.config.landPerEmpirePerDay * 2 - 1);
+  it("refills the pool when a new day (turnsPerDay turns) rolls over", () => {
+    let g = { ...richGame(), landPool: 0 };
+    // Play a full day's worth of turns with the pool drained...
+    for (let i = 0; i < g.config.turnsPerDay; i++) {
+      g = apply(g, "p1", { kind: "PLAY_TURN" }, ctx).state;
+    }
+    expect(g.empires.p1.turnsPlayed).toBe(g.config.turnsPerDay);
+    // ...then the first action of the new day refills the shared pool to a full
+    // day's allotment (scaled by empire count).
+    g = apply(g, "p1", { kind: "PLAY_TURN" }, ctx).state;
+    expect(g.landPool).toBe(g.config.landPerEmpirePerDay * 2);
   });
 });
 
@@ -240,26 +239,16 @@ describe("BUILD_UNIT", () => {
 });
 
 describe("PLAY_TURN", () => {
-  it("spends a turn and applies net income", () => {
+  it("advances the turn counter and applies net income", () => {
     const g = newGame();
     const { state, result } = apply(g, "p1", { kind: "PLAY_TURN" }, ctx);
     expect(result.ok).toBe(true);
     const e = state.empires.p1;
-    expect(e.turns).toBe(g.config.turnsPerDay - 1);
+    expect(e.turnsPlayed).toBe(1);
     expect(e.resources.gold).toBe(2000 + 225); // 175 region + 50 tax (100M × 5% × 0.1)
     expect(e.resources.food).toBe(500 + 5); // food 165 income − 160 consumption
     expect(e.resources.fuel).toBe(200 + 10);
     expect(e.protectionTurnsLeft).toBe(g.config.protectionTurns - 1);
-  });
-
-  it("refuses to play when out of turns", () => {
-    let g = newGame();
-    g = {
-      ...g,
-      empires: { ...g.empires, p1: { ...g.empires.p1, turns: 0 } },
-    };
-    const { result } = apply(g, "p1", { kind: "PLAY_TURN" }, ctx);
-    expect(result.ok).toBe(false);
   });
 
   it("starves an empire that cannot feed its population", () => {

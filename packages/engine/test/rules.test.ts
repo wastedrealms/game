@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   createEmpire,
-  accrueTurns,
+  dayOf,
+  turnsLeftInDay,
   netPerTurn,
   canBuildStructure,
   canBuildUnit,
@@ -14,29 +15,19 @@ import {
 
 const cfg = DEFAULT_GAME_CONFIG;
 
-describe("turn accrual (lazy)", () => {
-  it("grants no turns when no time has passed", () => {
-    const e = createEmpire({ id: "a", name: "A", now: 0 });
-    e.turns = 0;
-    const r = accrueTurns(e, cfg, 0);
-    expect(r.turns).toBe(0);
+describe("turn-based day", () => {
+  it("advances the day index every turnsPerDay turns", () => {
+    expect(dayOf(0, cfg)).toBe(0);
+    expect(dayOf(cfg.turnsPerDay - 1, cfg)).toBe(0);
+    expect(dayOf(cfg.turnsPerDay, cfg)).toBe(1);
+    expect(dayOf(cfg.turnsPerDay * 3, cfg)).toBe(3);
   });
 
-  it("grants one turn per interval and caps at the daily max", () => {
-    const interval = (cfg.dayMinutes * 60_000) / cfg.turnsPerDay;
-    const e = createEmpire({ id: "a", name: "A", now: 0 });
-    e.turns = 0;
-    expect(accrueTurns(e, cfg, interval * 3).turns).toBe(3);
-    expect(accrueTurns(e, cfg, interval * 999).turns).toBe(cfg.turnsPerDay);
-  });
-
-  it("preserves the sub-interval remainder in lastAccrualAt", () => {
-    const interval = (cfg.dayMinutes * 60_000) / cfg.turnsPerDay;
-    const e = createEmpire({ id: "a", name: "A", now: 0 });
-    e.turns = 0;
-    const r = accrueTurns(e, cfg, interval * 2 + 1234);
-    expect(r.turns).toBe(2);
-    expect(r.lastAccrualAt).toBe(interval * 2);
+  it("counts turns-left down through the day, then flips to a full day", () => {
+    expect(turnsLeftInDay(0, cfg)).toBe(cfg.turnsPerDay); // fresh day
+    expect(turnsLeftInDay(1, cfg)).toBe(cfg.turnsPerDay - 1);
+    expect(turnsLeftInDay(cfg.turnsPerDay - 1, cfg)).toBe(1); // last turn of day
+    expect(turnsLeftInDay(cfg.turnsPerDay, cfg)).toBe(cfg.turnsPerDay); // rolled over
   });
 });
 

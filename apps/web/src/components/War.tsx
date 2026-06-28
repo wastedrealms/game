@@ -46,8 +46,6 @@ export function War({
       ? "You're under protection — you cannot attack yet."
       : attacksLeft <= 0
         ? `Out of attacks today (${cap}/day).`
-        : me.turns < 1
-        ? "No turns remaining."
         : offensiveUnits.length === 0
           ? "Build offensive units (Barracks → infantry, or Shipyard armour/air) to wage war."
           : !tgt

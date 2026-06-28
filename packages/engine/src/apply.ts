@@ -3,11 +3,11 @@ import type { ApplyContext, EmpireState, GameState, OwnedRegion } from "./state.
 import type { Resource } from "./types.js";
 import { RESOURCES } from "./economy.js";
 import {
-  accrueTurns,
   canBuildStructure,
   canBuildUnit,
   canResearch,
   computeNetWorth,
+  dayOf,
   netPerTurn,
   regionBuyCost,
   researchPerTurn,
@@ -42,6 +42,11 @@ export function apply(
   action: Action,
   ctx: ApplyContext,
 ): ApplyOutput {
+  // `ctx` (injected time + RNG seed) is part of the apply() contract for
+  // server-authoritative play; this phase derives the day from turns played and
+  // draws RNG from `state.rngState`, so it isn't read here.
+  void ctx;
+
   const existing = state.empires[empireId];
   if (!existing) {
     return { state, result: { ok: false, message: "Unknown empire" } };
@@ -55,16 +60,11 @@ export function apply(
   const empire: EmpireState = structuredClone(existing);
   next.empires[empireId] = empire;
 
-  // Refill the shared daily land pool if a new day has elapsed (lazy, like turns).
-  refillLand(next, ctx.now);
+  // Refill the shared daily land pool when the turn-based day rolls over.
+  refillLand(next);
 
-  // Always refresh lazily-accrued turns so callers see a current count.
-  const acc = accrueTurns(empire, state.config, ctx.now);
-  empire.turns = acc.turns;
-  empire.lastAccrualAt = acc.lastAccrualAt;
-
-  // Reset the per-day attack count on a day rollover (lazy, like the land pool).
-  refreshAttackDay(empire, next, ctx.now);
+  // Reset the per-day attack count when this empire crosses into a new day.
+  refreshAttackDay(empire, next);
 
   let result: ActionResult;
   switch (action.kind) {
@@ -128,10 +128,7 @@ export function apply(
 // ── Action handlers (mutate the already-cloned `empire`) ──────────────────────
 
 function playTurn(state: GameState, empire: EmpireState): ActionResult {
-  if (empire.turns < 1) {
-    return { ok: false, message: "No turns remaining" };
-  }
-  empire.turns -= 1;
+  // Turns are unlimited — playing one simply advances the clock (and the day).
   empire.turnsPlayed += 1;
 
   const cfg = state.config;
@@ -197,7 +194,6 @@ function attack(
     return { ok: false, message: "You cannot attack yourself" };
   const defenderOrig = state.empires[targetId];
   if (!defenderOrig) return { ok: false, message: "Unknown target" };
-  if (attacker.turns < 1) return { ok: false, message: "No turns remaining" };
   if (attacker.protectionTurnsLeft > 0)
     return { ok: false, message: "You're under protection — you cannot attack" };
   if (defenderOrig.protectionTurnsLeft > 0)
@@ -228,7 +224,6 @@ function attack(
   const defender: EmpireState = structuredClone(defenderOrig);
   state.empires[targetId] = defender;
 
-  attacker.turns -= 1;
   attacker.attacksToday += 1;
 
   // Anti-farming: re-hitting the same target within the window yields less land.
@@ -359,7 +354,6 @@ function covertOp(
     return { ok: false, message: "You cannot spy on yourself" };
   const targetOrig = state.empires[targetId];
   if (!targetOrig) return { ok: false, message: "Unknown target" };
-  if (attacker.turns < 1) return { ok: false, message: "No turns remaining" };
   if (targetOrig.protectionTurnsLeft > 0)
     return { ok: false, message: `${targetOrig.name} is under protection` };
 
@@ -368,7 +362,6 @@ function covertOp(
 
   const defender: EmpireState = structuredClone(targetOrig);
   state.empires[targetId] = defender;
-  attacker.turns -= 1;
 
   // Orbital reconnaissance (Recon or Defense Satellite) boosts covert success.
   const hasRecon =
@@ -587,24 +580,23 @@ function research(state: GameState, empire: EmpireState, techKey: string): Actio
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Refill the shared land pool when a new day has elapsed. Use-it-or-lose-it: the
- * pool resets to one day's allotment (scaled by empire count) rather than banking,
- * so land stays scarce and contested. Lazy (driven by `now`), like turn accrual.
+ * Refill the shared land pool when the turn-based day rolls over. Use-it-or-lose-it:
+ * the pool resets to one day's allotment (scaled by empire count) rather than banking,
+ * so land stays scarce and contested. The game day is driven by the furthest-along
+ * empire's turns, so it advances in lockstep with play (the player drives the world).
  */
-function refillLand(state: GameState, now: number): void {
-  const dayMs = state.config.dayMinutes * 60_000;
-  if (dayMs <= 0) return;
-  const day = Math.floor(Math.max(0, now - state.createdAt) / dayMs);
+function refillLand(state: GameState): void {
+  let maxTurns = 0;
+  for (const id of state.order) maxTurns = Math.max(maxTurns, state.empires[id].turnsPlayed);
+  const day = dayOf(maxTurns, state.config);
   if (day <= (state.landDay ?? 0)) return;
   state.landDay = day;
   state.landPool = state.config.landPerEmpirePerDay * state.order.length;
 }
 
-/** Reset an empire's per-day attack count when the day index advances (lazy). */
-function refreshAttackDay(empire: EmpireState, state: GameState, now: number): void {
-  const dayMs = state.config.dayMinutes * 60_000;
-  if (dayMs <= 0) return;
-  const day = Math.floor(Math.max(0, now - state.createdAt) / dayMs);
+/** Reset an empire's per-day attack count when its turn-based day advances. */
+function refreshAttackDay(empire: EmpireState, state: GameState): void {
+  const day = dayOf(empire.turnsPlayed, state.config);
   if (day > (empire.attackDay ?? 0)) {
     empire.attackDay = day;
     empire.attacksToday = 0;

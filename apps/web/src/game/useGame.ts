@@ -40,9 +40,11 @@ export const DEFAULT_SETUP: SetupOptions = {
   startMode: "preset",
 };
 
-// Bumped to v4: economy gained supportIncomeFloor (morale→income). Earlier: shared
-// `planet`, regionSeq, landPool/landDay, victory. Old-shape saves are rejected by load().
-const SAVE_KEY = "wr-save-v6";
+// Bumped to v7: turns are now unlimited and days are turn-based (dropped the
+// per-empire `turns`/`lastAccrualAt` fields; land/attack days key off turnsPlayed).
+// Earlier: supportIncomeFloor, shared `planet`, regionSeq, landPool/landDay, victory.
+// Old-shape saves are rejected/superseded by load().
+const SAVE_KEY = "wr-save-v7";
 export const PLAYER_ID = "p1";
 
 // Single-player protection covers the first two full days (16 turns) so a new
@@ -142,8 +144,6 @@ function load(): GameState | null {
 export function useGame() {
   const [game, setGame] = useState<GameState | null>(() => load());
   const [message, setMessage] = useState<string>("Welcome, ruler.");
-  // forces a re-render so lazily-accrued turns appear without an action
-  const [, tick] = useState(0);
 
   useEffect(() => {
     if (!game) return;
@@ -153,11 +153,6 @@ export function useGame() {
       /* ignore quota */
     }
   }, [game]);
-
-  useEffect(() => {
-    const t = setInterval(() => tick((n) => n + 1), 15_000);
-    return () => clearInterval(t);
-  }, []);
 
   const dispatch = useCallback(
     (action: Action) => {

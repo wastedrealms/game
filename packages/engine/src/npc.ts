@@ -202,7 +202,7 @@ function developMilitary(state: GameState, id: string, ctx: ApplyContext): GameS
 /** Attack the weakest unprotected rival if clearly dominant. */
 function maybeAttack(state: GameState, id: string, ctx: ApplyContext): GameState {
   const me = state.empires[id];
-  if (me.turns < 1 || me.protectionTurnsLeft > 0) return state;
+  if (me.protectionTurnsLeft > 0) return state;
 
   const force = offensiveForce(me);
   const myPower = offensivePower(force);

@@ -1,5 +1,6 @@
 import {
-  accrueTurns,
+  turnsLeftInDay,
+  dayOf,
   netPerTurn,
   type GameState,
 } from "@wasted-realms/engine";
@@ -24,7 +25,9 @@ export function Hud({
   message: string;
 }) {
   const e = game.empires[playerId];
-  const turns = accrueTurns(e, game.config, Date.now()).turns;
+  // Turns are unlimited; "turns left" is purely a function of the current turn —
+  // it counts down through the day, then flips to a fresh day (see engine rules).
+  const turns = turnsLeftInDay(e.turnsPlayed, game.config);
   const net = netPerTurn(e, game.config, game.planet);
 
   const ranked = [...game.order].sort(
@@ -32,7 +35,9 @@ export function Hud({
   );
   const rank = ranked.indexOf(playerId) + 1;
 
-  const day = Math.floor(e.turnsPlayed / game.config.turnsPerDay) + 1;
+  const day = dayOf(e.turnsPlayed, game.config) + 1;
+  // Turn within the current day (1..turnsPerDay), resetting as the day flips.
+  const turnOfDay = (e.turnsPlayed % game.config.turnsPerDay) + 1;
 
   return (
     <section className="wr-boot rounded-lg border border-stone-200 bg-white/60 p-4 dark:border-[var(--color-edge)] dark:bg-[var(--color-panel)]">
@@ -114,7 +119,7 @@ export function Hud({
         <div className="flex flex-col gap-2 lg:border-l lg:border-stone-200 lg:pl-6 lg:dark:border-[var(--color-edge)]">
           <div>
             <div className="whitespace-nowrap font-display text-sm font-bold tabular-nums">
-              Day {day} · Turn {e.turnsPlayed + 1}
+              Day {day} · Turn {turnOfDay}/{game.config.turnsPerDay}
             </div>
             <div className="mt-1 flex items-center gap-1">
               {Array.from({ length: game.config.turnsPerDay }).map((_, i) => (
@@ -134,8 +139,7 @@ export function Hud({
           </div>
           <button
             onClick={onPlayTurn}
-            disabled={turns < 1}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-2.5 font-display text-sm font-bold text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--color-accent)] px-4 py-2.5 font-display text-sm font-bold text-black transition-opacity hover:opacity-90"
           >
             <Play className="h-4 w-4" strokeWidth={2.5} />
             Play Turn

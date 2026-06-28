@@ -7,7 +7,6 @@ import type { GameConfig } from "../types.js";
  */
 export const DEFAULT_GAME_CONFIG: GameConfig = {
   turnsPerDay: 8,
-  dayMinutes: 60,
   protectionTurns: 24,
   landCreatedPerDay: 1000,
   // ~12 new regions per empire per day enter the shared pool. With 3 empires

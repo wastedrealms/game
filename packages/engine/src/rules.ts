@@ -7,27 +7,24 @@ import { REGION_BY_KEY, STRUCTURE_BY_KEY, UNIT_BY_KEY, TECH_BY_KEY } from "./loo
 /** Net-worth weights (tunable). */
 const SCORE_WEIGHTS = { region: 1, structure: 2, unit: 0.5, goldPer: 1000 };
 
-// ── Turn accrual (lazy) ──────────────────────────────────────────────────────
+// ── Turn-based day ───────────────────────────────────────────────────────────
+// Turns are unlimited in single-player: play one whenever you like and the day
+// advances with them. A "day" is purely a counter — every `turnsPerDay` turns
+// played, the day rolls over (and the land pool / attack cap reset). Real time
+// no longer gates play.
+
+/** The 0-based day index for a given turn count: one day = `turnsPerDay` turns. */
+export function dayOf(turnsPlayed: number, config: GameConfig): number {
+  return Math.floor(turnsPlayed / config.turnsPerDay);
+}
 
 /**
- * Compute how many turns an empire has *now* without any ticking process:
- * stored turns + turns earned since lastAccrualAt, capped at the daily max.
- * Returns the new turn count and the timestamp to record.
+ * Turns remaining in the current day: counts down `turnsPerDay`→1 as turns are
+ * played, then flips back to a full day as the day index rolls over. Cosmetic —
+ * play is never blocked — but it's what the HUD's "turns left" meter shows.
  */
-export function accrueTurns(
-  empire: EmpireState,
-  config: GameConfig,
-  now: number,
-): { turns: number; lastAccrualAt: number } {
-  const intervalMs = (config.dayMinutes * 60_000) / config.turnsPerDay;
-  if (intervalMs <= 0) return { turns: empire.turns, lastAccrualAt: now };
-  const elapsed = Math.max(0, now - empire.lastAccrualAt);
-  const earned = Math.floor(elapsed / intervalMs);
-  if (earned <= 0) return { turns: empire.turns, lastAccrualAt: empire.lastAccrualAt };
-  const turns = Math.min(config.turnsPerDay, empire.turns + earned);
-  // advance the clock only by the turns actually granted (preserve remainder)
-  const lastAccrualAt = empire.lastAccrualAt + earned * intervalMs;
-  return { turns, lastAccrualAt };
+export function turnsLeftInDay(turnsPlayed: number, config: GameConfig): number {
+  return config.turnsPerDay - (turnsPlayed % config.turnsPerDay);
 }
 
 // ── Income / production / upkeep ─────────────────────────────────────────────

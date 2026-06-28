@@ -32,21 +32,17 @@ export interface EmpireState {
   militaryStructures: Record<string, number>;
   /** Units owned: unit key → number of individual units (always a multiple of batch). */
   units: Record<string, number>;
-  /** Turns available to spend (computed via lazy accrual; see rules.accrueTurns). */
-  turns: number;
-  /** Timestamp (ms) of the last turn accrual — basis for lazy accrual. */
-  lastAccrualAt: number;
   /** Remaining newbie-protection turns (can't be attacked / can't attack). */
   protectionTurnsLeft: number;
-  /** Total turns this empire has played (drives the Turn/Day counter). */
+  /** Total turns this empire has played — the clock: day = floor(turnsPlayed / turnsPerDay). */
   turnsPlayed: number;
   /** Monotonic counter for minting deterministic, collision-free region ids. */
   regionSeq: number;
   /** Cached net worth (recomputed each tick). */
   netWorth: number;
-  /** Attacks launched today (anti-grief cap; reset lazily on day rollover). */
+  /** Attacks launched today (anti-grief cap; reset when the turn-based day rolls over). */
   attacksToday: number;
-  /** Day index of the current `attacksToday` count (lazy reset basis). */
+  /** Day index (floor(turnsPlayed / turnsPerDay)) the current `attacksToday` belongs to. */
   attackDay: number;
   /** Anti-farming: per target id → last attack turn + accumulated "heat". */
   recentHits: Record<string, { turn: number; heat: number }>;
@@ -87,7 +83,7 @@ export interface GameState {
   log: NewsEntry[];
   /** Regions still claimable from today's shared land pool (BRE/SRE land faucet). */
   landPool: number;
-  /** Day index the land pool was last refilled (day = elapsed dayMinutes since start). */
+  /** Day index the land pool was last refilled (day = floor(turnsPlayed / turnsPerDay)). */
   landDay: number;
   /** The shared planet all empires live on (canonical tile map; see planet.ts). */
   planet: Planet;
@@ -175,8 +171,6 @@ export function createEmpire(opts: NewEmpireOptions): EmpireState {
     regions,
     militaryStructures: {},
     units: {},
-    turns: config.turnsPerDay,
-    lastAccrualAt: opts.now,
     protectionTurnsLeft: config.protectionTurns,
     turnsPlayed: 0,
     // Next region id continues after the starting regions → no collisions.

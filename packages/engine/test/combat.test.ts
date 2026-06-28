@@ -27,8 +27,6 @@ function empire(over: Partial<EmpireState>): EmpireState {
     regions: [],
     militaryStructures: {},
     units: {},
-    turns: 8,
-    lastAccrualAt: 0,
     protectionTurnsLeft: 0,
     turnsPlayed: 0,
     regionSeq: 0,
@@ -162,7 +160,7 @@ describe("ATTACK action", () => {
     expect(result.message).toMatch(/protection/i);
   });
 
-  it("spends a turn and transfers land on a win", () => {
+  it("spends an attack and transfers land on a win", () => {
     const g = gameWithArmy();
     const beforeTarget = g.empires.n1.regions.length;
     const { state, result } = apply(
@@ -172,7 +170,7 @@ describe("ATTACK action", () => {
       ctx,
     );
     expect(result.ok).toBe(true);
-    expect(state.empires.p1.turns).toBe(g.config.turnsPerDay - 1);
+    expect(state.empires.p1.attacksToday).toBe(1);
     expect(state.empires.n1.regions.length).toBeLessThan(beforeTarget);
     expect(state.empires.p1.regions.length).toBeGreaterThan(
       g.empires.p1.regions.length,

@@ -58,9 +58,11 @@ describe("anti-grief: per-day attack cap", () => {
     for (let i = 0; i < combatCfg.maxAttacksPerDay; i++) {
       g = apply(g, "p1", ATTACK, ctx).state;
     }
-    // Advance one full day — the lazy reset should zero attacksToday.
-    const nextDay: ApplyContext = { now: DEFAULT_GAME_CONFIG.dayMinutes * 60_000, seed: 1 };
-    const out = apply(g, "p1", ATTACK, nextDay);
+    // Play a full day's worth of turns — crossing the day boundary resets attacksToday.
+    for (let i = 0; i < DEFAULT_GAME_CONFIG.turnsPerDay; i++) {
+      g = apply(g, "p1", { kind: "PLAY_TURN" }, ctx).state;
+    }
+    const out = apply(g, "p1", ATTACK, ctx);
     expect(out.result.message).not.toMatch(/attacks today/i);
     expect(out.state.empires.p1.attacksToday).toBe(1);
   });

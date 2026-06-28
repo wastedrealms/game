@@ -2,13 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   createGame,
   stepNpcs,
-  DEFAULT_GAME_CONFIG,
   type GameState,
 } from "../src/index.js";
-
-// ms of real time per turn at default pacing (so lazy accrual grants turns).
-const MS_PER_TURN =
-  (DEFAULT_GAME_CONFIG.dayMinutes * 60_000) / DEFAULT_GAME_CONFIG.turnsPerDay;
 
 function newGame(): GameState {
   return createGame({
@@ -21,12 +16,10 @@ function newGame(): GameState {
   });
 }
 
-/** Run the NPC over `turns` turns, advancing the clock so turns keep accruing. */
+/** Run the NPC over `turns` turns (turns are unlimited; the clock is cosmetic). */
 function runNpc(g: GameState, turns: number): GameState {
-  let now = 0;
   for (let i = 0; i < turns; i++) {
-    now += MS_PER_TURN;
-    g = stepNpcs(g, { now, seed: 1 });
+    g = stepNpcs(g, { now: i, seed: 1 });
   }
   return g;
 }

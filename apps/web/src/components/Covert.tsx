@@ -40,13 +40,11 @@ export function Covert({
   const blocked =
     agentsOwned <= 0
       ? "Recruit Covert Agents (Command Center) to run operations."
-      : me.turns < 1
-        ? "No turns remaining."
-        : !tgt
-          ? "Select a target."
-          : tgt.protectionTurnsLeft > 0
-            ? `${tgt.name} is under protection.`
-            : null;
+      : !tgt
+        ? "Select a target."
+        : tgt.protectionTurnsLeft > 0
+          ? `${tgt.name} is under protection.`
+          : null;
 
   return (
     <section className="wr-boot rounded-lg border border-stone-200 bg-white/60 dark:border-[var(--color-edge)] dark:bg-[var(--color-panel)]">
