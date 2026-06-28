@@ -18,95 +18,154 @@ const TD = "px-4 py-3 align-top";
 const ROW =
   "border-t border-stone-200/70 dark:border-[var(--color-edge)] hover:bg-stone-100/60 dark:hover:bg-white/[0.02] transition-colors";
 
+type Col = { key: string; header: string; cls?: string };
+type Row = { key: string; cells: Record<string, React.ReactNode> };
+
+/** Renders a real table on ≥sm and a stacked card per row on mobile, so the wide
+ *  reference tables stay readable on a phone instead of scrolling off-screen. */
+function DataTable({
+  columns,
+  rows,
+  titleKey = columns[0].key,
+}: {
+  columns: Col[];
+  rows: Row[];
+  titleKey?: string;
+}) {
+  const fields = columns.filter((c) => c.key !== titleKey);
+  return (
+    <>
+      {/* Desktop / tablet: a normal table */}
+      <div className="hidden overflow-x-auto sm:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr>
+              {columns.map((c) => (
+                <th key={c.key} className={TH}>
+                  {c.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.key} className={ROW}>
+                {columns.map((c) => (
+                  <td key={c.key} className={`${TD} ${c.cls ?? ""}`}>
+                    {r.cells[c.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile: one card per row, fields as label/value pairs */}
+      <div className="space-y-2.5 px-3 sm:hidden">
+        {rows.map((r) => (
+          <div
+            key={r.key}
+            className="rounded-md border border-stone-200/70 p-3 dark:border-[var(--color-edge)]"
+          >
+            <div className="font-display text-sm font-medium">{r.cells[titleKey]}</div>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
+              {fields.map((c) => (
+                <div key={c.key} className="contents">
+                  <dt className="text-xs uppercase tracking-wide opacity-50">{c.header}</dt>
+                  <dd className="text-right opacity-80">{r.cells[c.key]}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function Codex() {
   return (
     <section className="wr-boot overflow-hidden rounded-lg border border-stone-200 bg-white/60 dark:border-[var(--color-edge)] dark:bg-[var(--color-panel)]">
-      <div className="space-y-8 overflow-x-auto p-1">
+      <div className="space-y-8 py-1">
         <Block title="Resources">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className={TH}>Resource</th>
-                <th className={TH}>Role</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RES_ORDER.map((k) => {
-                const { Icon, cls, label } = RES_META[k];
-                return (
-                  <tr key={k} className={ROW}>
-                    <td className={`${TD} font-display font-medium`}>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Icon className={`h-4 w-4 ${cls}`} strokeWidth={2.25} />
-                        {label}
-                      </span>
-                    </td>
-                    <td className={`${TD} max-w-2xl opacity-70`}>{RES_INFO[k]}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <DataTable
+            columns={[
+              { key: "resource", header: "Resource" },
+              { key: "role", header: "Role", cls: "max-w-2xl opacity-70" },
+            ]}
+            rows={RES_ORDER.map((k) => {
+              const { Icon, cls, label } = RES_META[k];
+              return {
+                key: k,
+                cells: {
+                  resource: (
+                    <span className="inline-flex items-center gap-1.5 font-display font-medium">
+                      <Icon className={`h-4 w-4 ${cls}`} strokeWidth={2.25} />
+                      {label}
+                    </span>
+                  ),
+                  role: <span className="opacity-70">{RES_INFO[k]}</span>,
+                },
+              };
+            })}
+          />
         </Block>
 
         <Block title="Regions">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className={TH}>Region</th>
-                <th className={TH}>Cost</th>
-                <th className={TH}>Income / turn</th>
-                <th className={TH}>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {REGIONS.map((r) => (
-                <tr key={r.key} className={ROW}>
-                  <td className={`${TD} font-display font-medium`}>
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: REGION_COLOR[r.key] }} />
-                      {r.name}
-                    </span>
-                  </td>
-                  <td className={`${TD} font-display tabular-nums`}>
-                    <span className="inline-flex items-center gap-1">
-                      <Coins className="h-3.5 w-3.5 text-[var(--color-gold)]" />
-                      {r.cost}
-                    </span>
-                  </td>
-                  <td className={TD}>
-                    <Bag bag={r.income} sign="+" />
-                  </td>
-                  <td className={`${TD} max-w-xs opacity-60`}>{r.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={[
+              { key: "region", header: "Region" },
+              { key: "cost", header: "Cost" },
+              { key: "income", header: "Income / turn" },
+              { key: "notes", header: "Notes", cls: "max-w-xs opacity-60" },
+            ]}
+            rows={REGIONS.map((r) => ({
+              key: r.key,
+              cells: {
+                region: (
+                  <span className="inline-flex items-center gap-2 font-display font-medium">
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-sm"
+                      style={{ background: REGION_COLOR[r.key] }}
+                    />
+                    {r.name}
+                  </span>
+                ),
+                cost: (
+                  <span className="inline-flex items-center gap-1 font-display tabular-nums">
+                    <Coins className="h-3.5 w-3.5 text-[var(--color-gold)]" />
+                    {r.cost}
+                  </span>
+                ),
+                income: <Bag bag={r.income} sign="+" />,
+                notes: <span className="opacity-60">{r.note}</span>,
+              },
+            }))}
+          />
         </Block>
 
         <Block title="Structures">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className={TH}>Structure</th>
-                <th className={TH}>Class</th>
-                <th className={TH}>Cost</th>
-                <th className={TH}>Produces</th>
-                <th className={TH}>Upkeep</th>
-              </tr>
-            </thead>
-            <tbody>
-              {STRUCTURES.map((s) => {
-                const Icon = structureIcon(s.key);
-                return (
-                <tr key={s.key} className={ROW}>
-                  <td className={`${TD} font-display font-medium`}>
-                    <span className="inline-flex items-center gap-2">
+          <DataTable
+            columns={[
+              { key: "structure", header: "Structure" },
+              { key: "class", header: "Class" },
+              { key: "cost", header: "Cost" },
+              { key: "produces", header: "Produces" },
+              { key: "upkeep", header: "Upkeep" },
+            ]}
+            rows={STRUCTURES.map((s) => {
+              const Icon = structureIcon(s.key);
+              return {
+                key: s.key,
+                cells: {
+                  structure: (
+                    <span className="inline-flex items-center gap-2 font-display font-medium">
                       <Icon className="h-4 w-4 shrink-0 opacity-70" />
                       {s.name}
                     </span>
-                  </td>
-                  <td className={TD}>
+                  ),
+                  class: (
                     <span
                       className={`rounded px-1.5 py-0.5 font-display text-xs ${
                         s.class === "M"
@@ -116,92 +175,80 @@ export function Codex() {
                     >
                       {s.class === "M" ? "Military" : "Economic"}
                     </span>
-                  </td>
-                  <td className={TD}>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  ),
+                  cost: (
+                    <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 sm:justify-start">
                       <Bag bag={s.cost} sign="-" />
                       {s.prereq?.resources && <Bag bag={s.prereq.resources} sign="-" />}
                     </div>
-                  </td>
-                  <td className={TD}>
-                    <Bag bag={s.produces} sign="+" />
-                  </td>
-                  <td className={TD}>
-                    <Bag bag={s.upkeep} sign="-" />
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  ),
+                  produces: <Bag bag={s.produces} sign="+" />,
+                  upkeep: <Bag bag={s.upkeep} sign="-" />,
+                },
+              };
+            })}
+          />
         </Block>
 
         <Block title="Troops">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className={TH}>Unit</th>
-                <th className={TH}>Batch</th>
-                <th className={TH}>Domain</th>
-                <th className={TH}>Cost / batch</th>
-                <th className={TH}>Upkeep / batch</th>
-              </tr>
-            </thead>
-            <tbody>
-              {UNITS.map((u) => {
-                const Icon = unitIcon(u.key);
-                return (
-                <tr key={u.key} className={ROW}>
-                  <td className={`${TD} font-display font-medium`}>
-                    <span className="inline-flex items-center gap-2">
+          <DataTable
+            columns={[
+              { key: "unit", header: "Unit" },
+              { key: "batch", header: "Batch" },
+              { key: "domain", header: "Domain" },
+              { key: "cost", header: "Cost / batch" },
+              { key: "upkeep", header: "Upkeep / batch" },
+            ]}
+            rows={UNITS.map((u) => {
+              const Icon = unitIcon(u.key);
+              return {
+                key: u.key,
+                cells: {
+                  unit: (
+                    <span className="inline-flex items-center gap-2 font-display font-medium">
                       <Icon className="h-4 w-4 shrink-0 opacity-70" />
                       {u.name}
                     </span>
-                  </td>
-                  <td className={`${TD} font-display tabular-nums`}>×{u.batch}</td>
-                  <td className={TD}>
+                  ),
+                  batch: <span className="font-display tabular-nums">×{u.batch}</span>,
+                  domain: (
                     <span className="font-display text-xs uppercase tracking-wide opacity-70">
                       {u.domain}
                     </span>
-                  </td>
-                  <td className={TD}>
-                    <Bag bag={u.cost} sign="-" />
-                  </td>
-                  <td className={TD}>
-                    <Bag bag={u.upkeep} sign="-" />
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  ),
+                  cost: <Bag bag={u.cost} sign="-" />,
+                  upkeep: <Bag bag={u.upkeep} sign="-" />,
+                },
+              };
+            })}
+          />
         </Block>
 
         <Block title="Research — Tech Ladder">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className={TH}>Tier</th>
-                <th className={TH}>Milestone</th>
-                <th className={TH}>Cost (RP)</th>
-                <th className={TH}>Requires</th>
-                <th className={TH}>Unlocks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {TECHS.map((t) => (
-                <tr key={t.key} className={ROW}>
-                  <td className={`${TD} font-display tabular-nums`}>T{t.tier}</td>
-                  <td className={`${TD} font-display font-medium`}>{t.name}</td>
-                  <td className={`${TD} font-display tabular-nums`}>{t.rpCost.toLocaleString()}</td>
-                  <td className={`${TD} opacity-60`}>
+          <DataTable
+            titleKey="milestone"
+            columns={[
+              { key: "tier", header: "Tier" },
+              { key: "milestone", header: "Milestone" },
+              { key: "cost", header: "Cost (RP)" },
+              { key: "requires", header: "Requires", cls: "opacity-60" },
+              { key: "unlocks", header: "Unlocks", cls: "max-w-md opacity-70" },
+            ]}
+            rows={TECHS.map((t) => ({
+              key: t.key,
+              cells: {
+                tier: <span className="font-display tabular-nums">T{t.tier}</span>,
+                milestone: <span className="font-display font-medium">{t.name}</span>,
+                cost: <span className="font-display tabular-nums">{t.rpCost.toLocaleString()}</span>,
+                requires: (
+                  <span className="opacity-60">
                     {t.requires ? TECH_BY_KEY.get(t.requires)?.name ?? t.requires : "—"}
-                  </td>
-                  <td className={`${TD} max-w-md opacity-70`}>{t.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </span>
+                ),
+                unlocks: <span className="opacity-70">{t.note}</span>,
+              },
+            }))}
+          />
         </Block>
       </div>
     </section>
