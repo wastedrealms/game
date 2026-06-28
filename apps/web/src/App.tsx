@@ -34,6 +34,7 @@ import { Scoreboard } from "./components/Scoreboard";
 import { NewsLog } from "./components/NewsLog";
 import { Codex } from "./components/Codex";
 import { Modal } from "./components/Modal";
+import { RenameDialog } from "./components/RenameDialog";
 import { SetupScreen } from "./components/SetupScreen";
 import { AboutDialog } from "./components/AboutDialog";
 import { LandingPage } from "./components/LandingPage";
@@ -81,44 +82,23 @@ export function App() {
       <header className="sticky top-0 z-10 border-b border-stone-300/70 bg-stone-50/80 backdrop-blur-md dark:border-[var(--color-edge)] dark:bg-[var(--color-void)]/80">
         <div className="mx-auto flex max-w-6xl items-center gap-1.5 px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <Globe className="h-6 w-6 shrink-0 text-[var(--color-accent)]" strokeWidth={2} />
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[var(--color-accent)]/15 ring-1 ring-[var(--color-accent)]/40 sm:h-11 sm:w-11 sm:rounded-lg">
+              <img src="/favicon.png" alt="Wasted Realms" className="h-6 w-6 rounded-sm sm:h-9 sm:w-9" />
+            </span>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate font-display text-base font-bold tracking-tight sm:text-lg">
+              <h1 className="hidden truncate font-display text-base font-bold tracking-tight sm:block sm:text-lg">
                 WASTED REALMS
               </h1>
-            <p className="flex h-4 items-center gap-1 font-display text-[11px] uppercase tracking-[0.2em] opacity-50">
+            <p className="flex h-4 items-center gap-1 font-display text-[11px] uppercase tracking-[0.2em] opacity-100 sm:opacity-50">
               {game ? (
-                <>
-                  {editingName ? (
-                    <input
-                      autoFocus
-                      defaultValue={game.empires[playerId].name}
-                      maxLength={28}
-                      onBlur={(ev) => {
-                        const v = ev.target.value.trim();
-                        // Only rename if it actually changed — a stray click shouldn't log a rename.
-                        if (v && v !== game.empires[playerId].name) {
-                          dispatch({ kind: "SET_NAME", name: v });
-                        }
-                        setEditingName(false);
-                      }}
-                      onKeyDown={(ev) => {
-                        if (ev.key === "Enter") (ev.target as HTMLInputElement).blur();
-                        if (ev.key === "Escape") setEditingName(false);
-                      }}
-                      className="my-[-1px] h-4 w-40 rounded border border-stone-300 bg-white px-1.5 py-0 text-[11px] normal-case leading-none tracking-normal text-stone-900 dark:border-[var(--color-edge)] dark:bg-[var(--color-void)] dark:text-stone-100"
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setEditingName(true)}
-                      title="Rename your realm"
-                      className="inline-flex items-center gap-1 transition-colors hover:text-[var(--color-accent)]"
-                    >
-                      {game.empires[playerId].name}
-                      <Pencil className="h-2.5 w-2.5 opacity-60" />
-                    </button>
-                  )}
-                </>
+                <button
+                  onClick={() => setEditingName(true)}
+                  title="Rename your realm"
+                  className="inline-flex min-w-0 max-w-full items-center gap-1 transition-colors hover:text-[var(--color-accent)]"
+                >
+                  <span className="truncate">{game.empires[playerId].name}</span>
+                  <Pencil className="h-2.5 w-2.5 shrink-0 opacity-60" />
+                </button>
               ) : (
                 <span className="normal-case tracking-normal">Free 4X empire remake</span>
               )}
@@ -258,6 +238,14 @@ export function App() {
       </main>
 
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
+
+      {game && editingName && (
+        <RenameDialog
+          current={game.empires[playerId].name}
+          onSave={(name) => dispatch({ kind: "SET_NAME", name })}
+          onClose={() => setEditingName(false)}
+        />
+      )}
 
       <Modal
         open={endConfirmOpen}
